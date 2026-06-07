@@ -1,602 +1,901 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>爬蟲專題報告 | scraping-pj</title>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
-  <style>
-    :root {
-      --bg: #0d0f14;
-      --surface: #151820;
-      --surface2: #1c2030;
-      --border: #2a2f3f;
-      --accent: #4f9eff;
-      --accent2: #7c6af7;
-      --green: #3dd68c;
-      --orange: #f5a623;
-      --red: #ff5f5f;
-      --text: #e8eaf0;
-      --muted: #7a8099;
-      --mono: 'Space Mono', monospace;
-      --sans: 'Noto Sans TC', sans-serif;
-    }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🎵 音樂推薦系統</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Noto+Sans+TC:wght@300;400;500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #080808;
+  --surface: #111111;
+  --surface2: #1a1a1a;
+  --border: #222;
+  --green: #00ff87;
+  --green-dim: rgba(0,255,135,0.12);
+  --red: #ff4560;
+  --yellow: #ffd166;
+  --white: #f0f0f0;
+  --gray: #555;
+  --gray2: #888;
+}
 
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+* { margin:0; padding:0; box-sizing:border-box; }
 
-    body {
-      font-family: var(--sans);
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-      overflow-x: hidden;
-    }
+body {
+  font-family: 'Noto Sans TC', sans-serif;
+  background: var(--bg);
+  color: var(--white);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
 
-    /* Grid background */
-    body::before {
-      content: '';
-      position: fixed;
-      inset: 0;
-      background-image:
-        linear-gradient(rgba(79,158,255,0.03) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(79,158,255,0.03) 1px, transparent 1px);
-      background-size: 40px 40px;
-      pointer-events: none;
-      z-index: 0;
-    }
+/* ── HEADER ── */
+header {
+  padding: 3rem 5vw 2rem;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+  position: relative;
+  overflow: hidden;
+}
+header::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, var(--green), transparent 60%);
+}
+.logo-mark {
+  font-family: 'Space Mono', monospace;
+  font-size: 1.8rem;
+  color: var(--green);
+  line-height: 1;
+}
+.header-text h1 {
+  font-family: 'Syne', sans-serif;
+  font-size: 1.3rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+}
+.header-text p {
+  font-size: 0.75rem;
+  color: var(--gray2);
+  font-family: 'Space Mono', monospace;
+  margin-top: 2px;
+}
 
-    .container {
-      max-width: 960px;
-      margin: 0 auto;
-      padding: 0 24px;
-      position: relative;
-      z-index: 1;
-    }
+/* ── LAYOUT ── */
+.container {
+  display: grid;
+  grid-template-columns: 420px 1fr;
+  min-height: calc(100vh - 90px);
+}
 
-    /* ── HERO ── */
-    .hero {
-      padding: 80px 0 60px;
-      border-bottom: 1px solid var(--border);
-    }
+/* ── LEFT PANEL ── */
+.left-panel {
+  border-right: 1px solid var(--border);
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
 
-    .hero-tag {
-      font-family: var(--mono);
-      font-size: 11px;
-      color: var(--accent);
-      letter-spacing: 3px;
-      text-transform: uppercase;
-      margin-bottom: 20px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .hero-tag::before {
-      content: '';
-      width: 24px;
-      height: 1px;
-      background: var(--accent);
-    }
+.panel-label {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.65rem;
+  color: var(--green);
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  margin-bottom: 0.5rem;
+}
 
-    .hero h1 {
-      font-size: clamp(2rem, 5vw, 3.2rem);
-      font-weight: 700;
-      line-height: 1.2;
-      margin-bottom: 16px;
-      background: linear-gradient(135deg, #e8eaf0 30%, #4f9eff);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
+.input-group { display: flex; flex-direction: column; gap: 0.5rem; }
 
-    .hero-sub {
-      color: var(--muted);
-      font-size: 15px;
-      display: flex;
-      gap: 20px;
-      flex-wrap: wrap;
-    }
-    .hero-sub span {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-    .dot {
-      width: 6px; height: 6px;
-      border-radius: 50%;
-      background: var(--accent);
-      display: inline-block;
-    }
-    .dot.green { background: var(--green); }
-    .dot.orange { background: var(--orange); }
+.url-input {
+  width: 100%;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.85rem 1rem;
+  color: var(--white);
+  font-size: 0.88rem;
+  font-family: 'Space Mono', monospace;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.url-input:focus { border-color: var(--green); }
+.url-input::placeholder { color: var(--gray); }
 
-    /* ── SECTION ── */
-    section {
-      padding: 56px 0;
-      border-bottom: 1px solid var(--border);
-    }
+.btn-search {
+  width: 100%;
+  background: var(--green);
+  color: #000;
+  border: none;
+  border-radius: 8px;
+  padding: 0.9rem;
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.1s;
+  letter-spacing: 0.05em;
+}
+.btn-search:hover { opacity: 0.88; }
+.btn-search:active { transform: scale(0.98); }
+.btn-search:disabled { opacity: 0.4; cursor: not-allowed; }
 
-    .section-label {
-      font-family: var(--mono);
-      font-size: 11px;
-      color: var(--muted);
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      margin-bottom: 8px;
-    }
+/* parsed info */
+.parsed-box {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1rem;
+  display: none;
+}
+.parsed-box.show { display: block; }
+.parsed-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.4rem 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.85rem;
+}
+.parsed-row:last-child { border-bottom: none; }
+.parsed-label { color: var(--gray2); font-size: 0.75rem; }
+.parsed-val { font-weight: 500; }
 
-    h2 {
-      font-size: 1.5rem;
-      font-weight: 700;
-      margin-bottom: 28px;
-      color: var(--text);
-    }
+.verify-status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.82rem;
+  padding: 0.6rem 0.8rem;
+  border-radius: 6px;
+  display: none;
+}
+.verify-status.show { display: flex; }
+.verify-status.ok  { background: rgba(0,255,135,0.1); color: var(--green); border: 1px solid rgba(0,255,135,0.2); }
+.verify-status.fail { background: rgba(255,69,96,0.1); color: var(--red); border: 1px solid rgba(255,69,96,0.2); }
 
-    h3 {
-      font-size: 1rem;
-      font-weight: 500;
-      color: var(--accent);
-      margin-bottom: 10px;
-    }
+.fix-row {
+  display: none;
+  gap: 0.5rem;
+}
+.fix-row.show { display: flex; }
+.fix-input {
+  flex: 1;
+  background: var(--surface2);
+  border: 1px solid var(--yellow);
+  border-radius: 6px;
+  padding: 0.6rem 0.8rem;
+  color: var(--white);
+  font-size: 0.82rem;
+  outline: none;
+}
+.btn-fix {
+  background: var(--yellow);
+  color: #000;
+  border: none;
+  border-radius: 6px;
+  padding: 0.6rem 1rem;
+  font-weight: 700;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
 
-    p {
-      color: #b0b8cc;
-      line-height: 1.8;
-      font-size: 15px;
-    }
+/* artist card */
+.artist-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1.2rem;
+  display: none;
+}
+.artist-card.show { display: block; }
+.artist-name-big {
+  font-family: 'Syne', sans-serif;
+  font-size: 1.3rem;
+  font-weight: 800;
+  margin-bottom: 0.8rem;
+}
+.artist-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.8rem;
+}
+.meta-chip {
+  font-size: 0.72rem;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--surface2);
+  color: var(--gray2);
+  font-family: 'Space Mono', monospace;
+}
+.meta-chip.accent { background: var(--green-dim); color: var(--green); }
+.artist-bio { font-size: 0.83rem; color: var(--gray2); line-height: 1.7; margin-bottom: 0.8rem; }
+.artist-row { font-size: 0.8rem; color: var(--gray2); margin-bottom: 0.3rem; }
+.artist-row span { color: var(--white); }
 
-    /* ── CARDS ── */
-    .card-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-      gap: 16px;
-      margin-bottom: 24px;
-    }
+/* concert */
+.concert-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1.2rem;
+  display: none;
+}
+.concert-section.show { display: block; }
+.concert-item {
+  padding: 0.6rem 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.82rem;
+}
+.concert-item:last-child { border-bottom: none; }
+.concert-title { color: var(--white); margin-bottom: 0.2rem; }
+.concert-snippet { color: var(--gray2); font-size: 0.75rem; line-height: 1.5; }
+.concert-links { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.8rem; }
+.concert-link {
+  font-size: 0.72rem;
+  padding: 4px 10px;
+  border-radius: 5px;
+  background: var(--surface2);
+  color: var(--green);
+  text-decoration: none;
+  font-family: 'Space Mono', monospace;
+  transition: background 0.2s;
+}
+.concert-link:hover { background: var(--green-dim); }
 
-    .card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 24px;
-      transition: border-color 0.2s, transform 0.2s;
-    }
-    .card:hover {
-      border-color: var(--accent);
-      transform: translateY(-2px);
-    }
+/* ── RIGHT PANEL ── */
+.right-panel {
+  padding: 2rem;
+  overflow-y: auto;
+}
 
-    .card-icon {
-      font-size: 28px;
-      margin-bottom: 12px;
-    }
+.tags-section { display: none; margin-bottom: 2rem; }
+.tags-section.show { display: block; }
+.tags-wrap { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.8rem; }
+.tag-pill {
+  font-size: 0.75rem;
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  color: var(--gray2);
+  transition: all 0.2s;
+  animation: popIn 0.3s ease both;
+}
+.tag-pill:nth-child(1)  { animation-delay: 0.02s; }
+.tag-pill:nth-child(2)  { animation-delay: 0.04s; }
+.tag-pill:nth-child(3)  { animation-delay: 0.06s; }
+.tag-pill:nth-child(4)  { animation-delay: 0.08s; }
+.tag-pill:nth-child(5)  { animation-delay: 0.10s; }
+.tag-pill:nth-child(6)  { animation-delay: 0.12s; }
+.tag-pill:nth-child(7)  { animation-delay: 0.14s; }
+.tag-pill:nth-child(8)  { animation-delay: 0.16s; }
+.tag-pill:nth-child(9)  { animation-delay: 0.18s; }
+.tag-pill:nth-child(10) { animation-delay: 0.20s; }
+.tag-pill.primary { border-color: var(--green); color: var(--green); background: var(--green-dim); }
+@keyframes popIn {
+  from { opacity:0; transform: scale(0.8); }
+  to   { opacity:1; transform: scale(1); }
+}
 
-    /* ── TECH STACK ── */
-    .tech-list {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-top: 8px;
-    }
+.recs-section { display: none; }
+.recs-section.show { display: block; }
 
-    .tag {
-      font-family: var(--mono);
-      font-size: 12px;
-      padding: 5px 12px;
-      border-radius: 6px;
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      color: var(--accent);
-    }
-    .tag.purple { color: var(--accent2); border-color: #3d3460; }
-    .tag.green { color: var(--green); border-color: #1e4535; }
-    .tag.orange { color: var(--orange); border-color: #4a3510; }
+.rec-list { display: flex; flex-direction: column; gap: 1rem; margin-top: 0.8rem; }
 
-    /* ── CODE BLOCK ── */
-    .code-block {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      overflow: hidden;
-      margin: 20px 0;
-    }
+.rec-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1.2rem 1.4rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  transition: border-color 0.2s, transform 0.2s;
+  animation: slideUp 0.4s ease both;
+  text-decoration: none;
+  color: inherit;
+}
+.rec-card:hover { border-color: #333; transform: translateX(4px); }
 
-    .code-header {
-      background: var(--surface2);
-      padding: 10px 16px;
-      font-family: var(--mono);
-      font-size: 12px;
-      color: var(--muted);
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      border-bottom: 1px solid var(--border);
-    }
+.rec-num {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--gray);
+  min-width: 24px;
+  padding-top: 2px;
+}
+.rec-body { flex: 1; }
+.rec-track { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1rem; margin-bottom: 2px; }
+.rec-artist { font-size: 0.82rem; color: var(--gray2); margin-bottom: 0.6rem; }
+.rec-tags { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-bottom: 0.5rem; }
+.rec-tag {
+  font-size: 0.68rem;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--surface2);
+  color: var(--gray2);
+}
+.rec-reason { font-size: 0.78rem; color: var(--gray2); font-style: italic; }
+.rec-arrow {
+  color: var(--green);
+  font-size: 1rem;
+  padding-top: 2px;
+  flex-shrink: 0;
+}
 
-    .code-dots {
-      display: flex;
-      gap: 5px;
-    }
-    .code-dots span {
-      width: 10px; height: 10px;
-      border-radius: 50%;
-    }
-    .code-dots span:nth-child(1) { background: #ff5f5f; }
-    .code-dots span:nth-child(2) { background: #f5a623; }
-    .code-dots span:nth-child(3) { background: #3dd68c; }
+@keyframes slideUp {
+  from { opacity:0; transform: translateY(16px); }
+  to   { opacity:1; transform: translateY(0); }
+}
+.rec-card:nth-child(1)  { animation-delay: 0.05s; }
+.rec-card:nth-child(2)  { animation-delay: 0.10s; }
+.rec-card:nth-child(3)  { animation-delay: 0.15s; }
+.rec-card:nth-child(4)  { animation-delay: 0.20s; }
+.rec-card:nth-child(5)  { animation-delay: 0.25s; }
 
-    pre {
-      padding: 20px;
-      overflow-x: auto;
-      font-family: var(--mono);
-      font-size: 13px;
-      line-height: 1.7;
-      color: #c9d1e8;
-    }
+/* loading */
+.loading {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  gap: 1rem;
+}
+.loading.show { display: flex; }
+.spinner {
+  width: 36px; height: 36px;
+  border: 2px solid var(--border);
+  border-top-color: var(--green);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-text {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.8rem;
+  color: var(--gray2);
+}
 
-    .kw { color: #7c6af7; }
-    .fn { color: #4f9eff; }
-    .str { color: #3dd68c; }
-    .cm { color: #4a5270; font-style: italic; }
-    .num { color: #f5a623; }
+/* empty state */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 60%;
+  gap: 1rem;
+  color: var(--gray);
+  text-align: center;
+}
+.empty-icon { font-size: 3rem; opacity: 0.3; }
+.empty-text { font-size: 0.85rem; line-height: 1.7; }
 
-    /* ── TABLE ── */
-    .table-wrap {
-      overflow-x: auto;
-      border-radius: 12px;
-      border: 1px solid var(--border);
-    }
+/* error */
+.error-box {
+  background: rgba(255,69,96,0.08);
+  border: 1px solid rgba(255,69,96,0.2);
+  border-radius: 8px;
+  padding: 0.8rem 1rem;
+  font-size: 0.82rem;
+  color: var(--red);
+  display: none;
+}
+.error-box.show { display: block; }
 
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 14px;
-    }
+/* step progress */
+.step-bar {
+  display: none;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-bottom: 0.5rem;
+}
+.step-bar.show { display: flex; }
+.step-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.75rem;
+  color: var(--gray);
+  font-family: 'Space Mono', monospace;
+}
+.step-item.active { color: var(--green); }
+.step-item.done   { color: var(--gray2); }
+.step-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
 
-    thead tr {
-      background: var(--surface2);
-    }
-
-    th {
-      padding: 14px 18px;
-      text-align: left;
-      font-family: var(--mono);
-      font-size: 11px;
-      letter-spacing: 1px;
-      color: var(--muted);
-      text-transform: uppercase;
-      border-bottom: 1px solid var(--border);
-    }
-
-    td {
-      padding: 13px 18px;
-      border-bottom: 1px solid var(--border);
-      color: #b0b8cc;
-    }
-
-    tbody tr:last-child td { border-bottom: none; }
-    tbody tr:hover { background: var(--surface); }
-
-    .badge {
-      display: inline-block;
-      padding: 3px 10px;
-      border-radius: 20px;
-      font-size: 12px;
-      font-family: var(--mono);
-    }
-    .badge.pos { background: #1e4535; color: var(--green); }
-    .badge.neg { background: #3d1515; color: var(--red); }
-    .badge.neu { background: #2a2f3f; color: var(--muted); }
-
-    /* ── CHART PLACEHOLDER ── */
-    .chart-box {
-      background: var(--surface);
-      border: 1px dashed var(--border);
-      border-radius: 12px;
-      height: 260px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      color: var(--muted);
-      font-size: 13px;
-    }
-    .chart-box .chart-icon { font-size: 40px; opacity: 0.4; }
-    .chart-box code {
-      font-family: var(--mono);
-      font-size: 12px;
-      color: var(--accent);
-      background: var(--surface2);
-      padding: 4px 10px;
-      border-radius: 4px;
-    }
-
-    /* ── STATS ROW ── */
-    .stats-row {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-      gap: 16px;
-      margin: 24px 0;
-    }
-
-    .stat-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 20px;
-      text-align: center;
-    }
-
-    .stat-num {
-      font-family: var(--mono);
-      font-size: 2rem;
-      font-weight: 700;
-      color: var(--accent);
-      line-height: 1;
-      margin-bottom: 6px;
-    }
-    .stat-num.green { color: var(--green); }
-    .stat-num.orange { color: var(--orange); }
-
-    .stat-label {
-      font-size: 12px;
-      color: var(--muted);
-    }
-
-    /* ── CONCLUSION ── */
-    .conclusion-box {
-      background: linear-gradient(135deg, #0f1829, #131c2e);
-      border: 1px solid #2040608a;
-      border-radius: 12px;
-      padding: 28px;
-      position: relative;
-      overflow: hidden;
-    }
-    .conclusion-box::before {
-      content: '';
-      position: absolute;
-      top: 0; left: 0; right: 0;
-      height: 2px;
-      background: linear-gradient(90deg, var(--accent), var(--accent2));
-    }
-
-    /* ── FOOTER ── */
-    footer {
-      padding: 40px 0;
-      text-align: center;
-      color: var(--muted);
-      font-size: 13px;
-      font-family: var(--mono);
-    }
-    footer a {
-      color: var(--accent);
-      text-decoration: none;
-    }
-
-    /* ── FLOW STEPS ── */
-    .flow {
-      display: flex;
-      align-items: center;
-      gap: 0;
-      flex-wrap: wrap;
-      margin: 20px 0;
-    }
-    .flow-step {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 10px 16px;
-      font-size: 13px;
-      color: var(--text);
-      white-space: nowrap;
-    }
-    .flow-arrow {
-      color: var(--muted);
-      padding: 0 8px;
-      font-size: 18px;
-    }
-
-    @media (max-width: 600px) {
-      .flow { flex-direction: column; align-items: flex-start; }
-      .flow-arrow { transform: rotate(90deg); }
-    }
-  </style>
+@media (max-width: 900px) {
+  .container { grid-template-columns: 1fr; }
+  .left-panel { border-right: none; border-bottom: 1px solid var(--border); }
+}
+</style>
 </head>
 <body>
 
+<header>
+  <div class="logo-mark">♪</div>
+  <div class="header-text">
+    <h1>MUSIC RECOMMENDER</h1>
+    <p>YouTube URL → AI 曲風分析 → 歌曲推薦</p>
+  </div>
+</header>
+
 <div class="container">
 
-  <!-- HERO -->
-  <header class="hero">
-    <div class="hero-tag">大二專題報告 · 2025</div>
-    <h1>PTT 新聞情緒分析系統</h1>
-    <div class="hero-sub">
-      <span><span class="dot green"></span> 已完成</span>
-      <span><span class="dot"></span> zeng-wq</span>
-      <span><span class="dot orange"></span> Python · BeautifulSoup</span>
+  <!-- ── LEFT PANEL ── -->
+  <div class="left-panel">
+
+    <div class="input-group">
+      <div class="panel-label">輸入 YouTube 連結</div>
+      <input class="url-input" id="urlInput" type="text" placeholder="https://youtu.be/..." />
+      <button class="btn-search" id="searchBtn" onclick="startSearch()">分析並推薦</button>
     </div>
-  </header>
 
-  <!-- 專題簡介 -->
-  <section>
-    <div class="section-label">01 · Overview</div>
-    <h2>專題簡介</h2>
-    <p>
-      本專題透過爬蟲技術自動抓取 PTT 八卦板文章標題，結合中文斷詞與情緒分析，
-      呈現近期網路輿論的關鍵字熱度與情緒傾向分佈，探討社群媒體上的公眾討論趨勢。
-    </p>
+    <div class="error-box" id="errorBox"></div>
 
-    <div class="flow" style="margin-top: 28px;">
-      <div class="flow-step">🕷️ 爬取 PTT</div>
-      <div class="flow-arrow">→</div>
-      <div class="flow-step">✂️ jieba 斷詞</div>
-      <div class="flow-arrow">→</div>
-      <div class="flow-step">📊 情緒分析</div>
-      <div class="flow-arrow">→</div>
-      <div class="flow-step">☁️ 文字雲視覺化</div>
-      <div class="flow-arrow">→</div>
-      <div class="flow-step">📄 本報告</div>
+    <div class="step-bar" id="stepBar">
+      <div class="step-item" id="s0"><div class="step-dot"></div>取得影片資訊</div>
+      <div class="step-item" id="s1"><div class="step-dot"></div>解析歌曲與藝人</div>
+      <div class="step-item" id="s2"><div class="step-dot"></div>驗證歌曲出處</div>
+      <div class="step-item" id="s3"><div class="step-dot"></div>查詢藝人資訊</div>
+      <div class="step-item" id="s4"><div class="step-dot"></div>查詢演唱會資訊</div>
+      <div class="step-item" id="s5"><div class="step-dot"></div>分析曲風標籤</div>
+      <div class="step-item" id="s6"><div class="step-dot"></div>推薦相似歌曲</div>
     </div>
-  </section>
 
-  <!-- 技術棧 -->
-  <section>
-    <div class="section-label">02 · Tech Stack</div>
-    <h2>使用技術</h2>
-    <div class="card-grid">
-      <div class="card">
-        <div class="card-icon">🕷️</div>
-        <h3>爬蟲</h3>
-        <div class="tech-list">
-          <span class="tag">requests</span>
-          <span class="tag">BeautifulSoup4</span>
-        </div>
-        <p style="margin-top:12px; font-size:13px;">模擬瀏覽器抓取 PTT 網頁，解析 HTML 結構取得文章標題與推文數。</p>
+    <!-- 解析結果 -->
+    <div class="parsed-box" id="parsedBox">
+      <div class="panel-label">解析結果</div>
+      <div class="parsed-row">
+        <span class="parsed-label">歌曲</span>
+        <span class="parsed-val" id="parsedTrack">—</span>
       </div>
-      <div class="card">
-        <div class="card-icon">📊</div>
-        <h3>資料處理</h3>
-        <div class="tech-list">
-          <span class="tag purple">pandas</span>
-          <span class="tag purple">jieba</span>
-        </div>
-        <p style="margin-top:12px; font-size:13px;">清洗資料、中文斷詞、統計詞頻，篩除停用詞。</p>
-      </div>
-      <div class="card">
-        <div class="card-icon">🎨</div>
-        <h3>視覺化</h3>
-        <div class="tech-list">
-          <span class="tag green">matplotlib</span>
-          <span class="tag green">WordCloud</span>
-        </div>
-        <p style="margin-top:12px; font-size:13px;">產生文字雲、長條圖、情緒分佈圓餅圖。</p>
-      </div>
-    </div>
-  </section>
-
-  <!-- 程式碼片段 -->
-  <section>
-    <div class="section-label">03 · Code</div>
-    <h2>核心程式碼</h2>
-
-    <div class="code-block">
-      <div class="code-header">
-        <div class="code-dots"><span></span><span></span><span></span></div>
-        crawler.py
-      </div>
-      <pre><span class="cm"># 爬取 PTT 八卦板文章標題</span>
-<span class="kw">import</span> requests
-<span class="kw">from</span> bs4 <span class="kw">import</span> BeautifulSoup
-<span class="kw">import</span> pandas <span class="kw">as</span> pd
-
-<span class="kw">def</span> <span class="fn">get_ptt_titles</span>(pages=<span class="num">5</span>):
-    headers = {<span class="str">'Cookie'</span>: <span class="str">'over18=1'</span>}
-    titles = []
-
-    <span class="kw">for</span> i <span class="kw">in</span> <span class="fn">range</span>(pages):
-        url = <span class="fn">f</span><span class="str">'https://www.ptt.cc/bbs/Gossiping/index{i}.html'</span>
-        res = requests.<span class="fn">get</span>(url, headers=headers)
-        soup = BeautifulSoup(res.text, <span class="str">'html.parser'</span>)
-
-        <span class="kw">for</span> item <span class="kw">in</span> soup.<span class="fn">select</span>(<span class="str">'.r-ent .title a'</span>):
-            titles.<span class="fn">append</span>(item.text.<span class="fn">strip</span>())
-
-    <span class="kw">return</span> pd.<span class="fn">DataFrame</span>(titles, columns=[<span class="str">'title'</span>])
-
-df = <span class="fn">get_ptt_titles</span>()
-df.<span class="fn">to_csv</span>(<span class="str">'ptt_titles.csv'</span>, index=<span class="num">False</span>)
-<span class="fn">print</span>(<span class="fn">f</span><span class="str">'共抓取 {len(df)} 篇文章'</span>)</pre>
-    </div>
-  </section>
-
-  <!-- 統計數據 -->
-  <section>
-    <div class="section-label">04 · Results</div>
-    <h2>分析結果</h2>
-
-    <div class="stats-row">
-      <div class="stat-card">
-        <div class="stat-num">523</div>
-        <div class="stat-label">爬取文章數</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-num green">62%</div>
-        <div class="stat-label">負面情緒佔比</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-num orange">1,284</div>
-        <div class="stat-label">不重複關鍵字</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-num" style="color:var(--accent2)">5</div>
-        <div class="stat-label">爬取頁數</div>
+      <div class="parsed-row">
+        <span class="parsed-label">藝人</span>
+        <span class="parsed-val" id="parsedArtist">—</span>
       </div>
     </div>
 
-    <!-- 圖表佔位 -->
-    <div class="chart-box" style="margin-bottom: 16px;">
-      <div class="chart-icon">☁️</div>
-      <p>文字雲圖表</p>
-      <code>把 wordcloud.png 放到同資料夾後改為 &lt;img src="wordcloud.png"&gt;</code>
+    <!-- 驗證狀態 -->
+    <div class="verify-status" id="verifyStatus"></div>
+
+    <!-- 修正藝人 -->
+    <div class="fix-row" id="fixRow">
+      <input class="fix-input" id="fixInput" placeholder="輸入正確藝人名稱" />
+      <button class="btn-fix" onclick="reVerify()">重新驗證</button>
     </div>
 
-    <div class="chart-box">
-      <div class="chart-icon">📊</div>
-      <p>關鍵字頻率長條圖</p>
-      <code>把 chart.png 放到同資料夾後改為 &lt;img src="chart.png"&gt;</code>
+    <!-- 藝人資訊 -->
+    <div class="artist-card" id="artistCard">
+      <div class="panel-label">藝人資訊</div>
+      <div class="artist-name-big" id="artistName">—</div>
+      <div class="artist-meta" id="artistMeta"></div>
+      <div class="artist-bio" id="artistBio"></div>
+      <div class="artist-row" id="artistWorks"></div>
+      <div class="artist-row" id="artistRelated"></div>
+      <div class="artist-row" id="artistAwards"></div>
     </div>
-  </section>
 
-  <!-- 資料表格 -->
-  <section>
-    <div class="section-label">05 · Data</div>
-    <h2>關鍵字統計表</h2>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>關鍵字</th>
-            <th>出現次數</th>
-            <th>情緒</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr><td>1</td><td>政府</td><td>142</td><td><span class="badge neg">😠 負面</span></td></tr>
-          <tr><td>2</td><td>颱風</td><td>98</td><td><span class="badge neu">😐 中性</span></td></tr>
-          <tr><td>3</td><td>演唱會</td><td>76</td><td><span class="badge pos">😊 正面</span></td></tr>
-          <tr><td>4</td><td>選舉</td><td>65</td><td><span class="badge neg">😠 負面</span></td></tr>
-          <tr><td>5</td><td>美食</td><td>54</td><td><span class="badge pos">😊 正面</span></td></tr>
-          <!-- 繼續新增你的資料 -->
-        </tbody>
-      </table>
+    <!-- 演唱會 -->
+    <div class="concert-section" id="concertSection">
+      <div class="panel-label">近期演唱會</div>
+      <div id="concertList"></div>
+      <div class="concert-links" id="concertLinks"></div>
     </div>
-    <p style="margin-top:12px; font-size:13px; color: var(--muted);">※ 以上數據為範例，請替換為你實際爬取的結果。</p>
-  </section>
 
-  <!-- 結論 -->
-  <section>
-    <div class="section-label">06 · Conclusion</div>
-    <h2>結論與心得</h2>
-    <div class="conclusion-box">
-      <p>
-        本次分析發現，PTT 八卦板近期討論以<strong style="color:var(--red)">負面情緒為主（62%）</strong>，
-        關鍵字集中在政治與社會事件。正面討論主要來自娛樂與美食話題。
-      </p>
-      <p style="margin-top: 14px;">
-        透過本專題，實際學習了 HTTP 請求、HTML 解析、中文 NLP 斷詞，以及資料視覺化的完整流程，
-        了解到爬蟲在資料收集上的實用性，以及反爬蟲機制的因應方式。
-      </p>
+  </div>
+
+  <!-- ── RIGHT PANEL ── -->
+  <div class="right-panel">
+
+    <div class="empty-state" id="emptyState">
+      <div class="empty-icon">🎵</div>
+      <div class="empty-text">貼入 YouTube 影片連結<br>開始分析曲風並推薦相似歌曲</div>
     </div>
-  </section>
 
-  <!-- Footer -->
-  <footer>
-    <p>scraping-pj · zeng-wq · 2025</p>
-    <p style="margin-top:6px;">
-      <a href="https://github.com/zeng-wq/scraping-pj" target="_blank">github.com/zeng-wq/scraping-pj</a>
-    </p>
-  </footer>
+    <div class="loading" id="loadingBox">
+      <div class="spinner"></div>
+      <div class="loading-text" id="loadingText">分析中...</div>
+    </div>
 
+    <div class="tags-section" id="tagsSection">
+      <div class="panel-label">曲風標籤</div>
+      <div class="tags-wrap" id="tagsWrap"></div>
+    </div>
+
+    <div class="recs-section" id="recsSection">
+      <div class="panel-label" style="margin-top:1.5rem">推薦歌曲</div>
+      <div class="rec-list" id="recList"></div>
+    </div>
+
+  </div>
 </div>
+
+<script>
+const GROQ_API_KEY    = "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";
+const GROQ_URL        = "https://api.groq.com/openai/v1/chat/completions";
+const GROQ_MODEL      = "llama-3.3-70b-versatile";
+const YOUTUBE_API_KEY = "AIzaSyBwE6llhpJbKP0Ww7iwmNj_8dyF_LYXbVA";
+const YOUTUBE_URL     = "https://www.googleapis.com/youtube/v3";
+const MIN_MATCH_TAGS  = 15;
+const MAX_SAME_ARTIST = 2;
+const MAX_TAGS        = 30;
+
+let state = { track: "", artist: "", videoId: "" };
+
+// ── UTILS ──
+function show(id)  { document.getElementById(id).classList.add("show"); }
+function hide(id)  { document.getElementById(id).classList.remove("show"); }
+function setText(id, t) { document.getElementById(id).textContent = t; }
+function setHtml(id, h) { document.getElementById(id).innerHTML = h; }
+
+function setStep(n, status) {
+  const el = document.getElementById("s" + n);
+  el.classList.remove("active","done");
+  if (status) el.classList.add(status);
+}
+function setLoading(text) {
+  setText("loadingText", text);
+  show("loadingBox");
+  hide("emptyState");
+}
+function hideLoading() { hide("loadingBox"); }
+
+function showError(msg) {
+  const el = document.getElementById("errorBox");
+  el.textContent = msg;
+  el.classList.add("show");
+}
+function clearError() { document.getElementById("errorBox").classList.remove("show"); }
+
+// ── GROQ ──
+async function groqCall(system, user, maxTokens = 300, temperature = 0) {
+  const resp = await fetch(GROQ_URL, {
+    method: "POST",
+    headers: { "Authorization": `Bearer ${GROQ_API_KEY}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: GROQ_MODEL,
+      max_tokens: maxTokens,
+      temperature,
+      messages: [
+        { role: "system", content: system },
+        { role: "user",   content: user },
+      ]
+    })
+  });
+  const data = await resp.json();
+  return data.choices[0].message.content.trim();
+}
+
+function parseJsonObj(text) {
+  const s = text.indexOf("{"), e = text.lastIndexOf("}") + 1;
+  try { return s !== -1 ? JSON.parse(text.slice(s, e)) : {}; } catch { return {}; }
+}
+
+function parseJsonArr(text) {
+  const s = text.indexOf("["), e = text.lastIndexOf("]") + 1;
+  try { const r = s !== -1 ? JSON.parse(text.slice(s, e)) : []; return Array.isArray(r) ? r : []; }
+  catch { return []; }
+}
+
+// ── YOUTUBE ──
+function extractVideoId(url) {
+  const patterns = [
+    /(?:v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/,
+    /(?:embed\/)([a-zA-Z0-9_-]{11})/,
+    /(?:shorts\/)([a-zA-Z0-9_-]{11})/,
+  ];
+  for (const p of patterns) {
+    const m = url.match(p);
+    if (m) return m[1];
+  }
+  return "";
+}
+
+async function getVideoInfo(url) {
+  const videoId = extractVideoId(url);
+  if (!videoId) throw new Error("無法解析 YouTube 連結");
+  const resp = await fetch(`${YOUTUBE_URL}/videos?part=snippet&id=${videoId}&key=${YOUTUBE_API_KEY}`);
+  const data = await resp.json();
+  if (!data.items?.length) throw new Error("找不到影片");
+  const s = data.items[0].snippet;
+  return { videoId, title: s.title, channel: s.channelTitle };
+}
+
+async function getTopVideoOwner(track) {
+  const resp = await fetch(`${YOUTUBE_URL}/search?part=snippet&q=${encodeURIComponent(track)}&type=video&maxResults=5&key=${YOUTUBE_API_KEY}`);
+  const data = await resp.json();
+  const items = data.items || [];
+  if (!items.length) return null;
+  const ids = items.map(i => i.id.videoId).join(",");
+  const statsResp = await fetch(`${YOUTUBE_URL}/videos?part=statistics,snippet&id=${ids}&key=${YOUTUBE_API_KEY}`);
+  const statsData = await statsResp.json();
+  const videos = statsData.items || [];
+  if (!videos.length) return null;
+  return videos.reduce((a, b) =>
+    parseInt(a.statistics?.viewCount || 0) > parseInt(b.statistics?.viewCount || 0) ? a : b
+  );
+}
+
+// ── VERIFY ──
+function normalize(s) {
+  return s.toLowerCase().replace(/[\s\-_·•【】()（）\[\]《》'"]/g, "");
+}
+function similarity(a, b) {
+  a = normalize(a); b = normalize(b);
+  if (!a || !b) return 0;
+  if (a.includes(b) || b.includes(a)) return 1;
+  const sa = new Set(a), sb = new Set(b);
+  const inter = [...sa].filter(c => sb.has(c)).length;
+  const union = new Set([...sa, ...sb]).size;
+  return union > 0 ? inter / union : 0;
+}
+
+async function verifyByYoutube(track, artist) {
+  try {
+    const top = await getTopVideoOwner(track);
+    if (!top) return { match: true, reason: "無法取得 YouTube 資料，略過驗證", channel: "" };
+    const channel = top.snippet.channelTitle;
+    const title   = top.snippet.title;
+    const views   = parseInt(top.statistics?.viewCount || 0);
+    const sim1 = similarity(artist, channel);
+    const sim2 = similarity(artist, title);
+    const best = Math.max(sim1, sim2);
+    const match = best >= 0.3;
+    return {
+      match,
+      channel,
+      views,
+      reason: match
+        ? `最高播放頻道「${channel}」與輸入藝人相符（相似度 ${(best*100).toFixed(0)}%）`
+        : `最高播放頻道為「${channel}」，與「${artist}」不相符`
+    };
+  } catch (e) {
+    return { match: true, reason: "驗證略過", channel: "" };
+  }
+}
+
+// ── MAIN FLOW ──
+async function startSearch() {
+  const url = document.getElementById("urlInput").value.trim();
+  if (!url) { showError("請輸入 YouTube 連結"); return; }
+
+  clearError();
+  document.getElementById("searchBtn").disabled = true;
+  hide("tagsSection"); hide("recsSection"); hide("parsedBox");
+  hide("verifyStatus"); hide("fixRow"); hide("artistCard");
+  hide("concertSection"); hide("emptyState");
+  show("stepBar");
+
+  try {
+    // Step 0
+    setStep(0,"active"); setLoading("取得影片資訊...");
+    const video = await getVideoInfo(url);
+    state.videoId = video.videoId;
+    setStep(0,"done");
+
+    // Step 1
+    setStep(1,"active"); setLoading("解析歌曲與藝人...");
+    const isTopic = video.channel.toLowerCase().includes("topic");
+    let track, artist;
+    if (isTopic) {
+      track  = video.title;
+      artist = video.channel.replace(/\s*-\s*topic\s*$/i, "").trim();
+    } else {
+      const text = await groqCall(
+        "只回傳 JSON，不加任何說明。",
+        `YouTube 影片標題：${video.title}\n頻道名稱：${video.channel}\n\n解析出歌曲名稱和藝人名稱。只回傳 JSON：\n{"track": "歌曲名稱", "artist": "藝人名稱"}\n\n規則：頻道含 "- Topic" 則藝人為頻道名去掉 "- Topic"，常見格式：歌名/藝人、藝人-歌名`
+      );
+      const info = parseJsonObj(text);
+      track  = info.track  || video.title;
+      artist = info.artist || video.channel;
+    }
+    state.track = track; state.artist = artist;
+    setText("parsedTrack", track);
+    setText("parsedArtist", artist);
+    show("parsedBox");
+    setStep(1,"done");
+
+    // Step 2 - verify
+    setStep(2,"active"); setLoading("驗證歌曲出處...");
+    await runVerify(track, artist);
+
+  } catch(e) {
+    hideLoading();
+    showError("錯誤：" + e.message);
+    document.getElementById("searchBtn").disabled = false;
+  }
+}
+
+async function runVerify(track, artist) {
+  const result = await verifyByYoutube(track, artist);
+  const vEl = document.getElementById("verifyStatus");
+  vEl.className = "verify-status show " + (result.match ? "ok" : "fail");
+  vEl.textContent = (result.match ? "✅ " : "❌ ") + result.reason;
+
+  if (!result.match) {
+    show("fixRow");
+    document.getElementById("fixInput").placeholder = `建議：${result.channel || "正確藝人名稱"}`;
+    setStep(2,"active");
+    hideLoading();
+    document.getElementById("searchBtn").disabled = false;
+    return;
+  }
+
+  setStep(2,"done");
+  await continueAfterVerify(track, artist);
+}
+
+async function reVerify() {
+  const fix = document.getElementById("fixInput").value.trim();
+  if (!fix) return;
+  state.artist = fix;
+  setText("parsedArtist", fix);
+  document.getElementById("searchBtn").disabled = true;
+  setLoading("重新驗證...");
+  show("stepBar");
+  setStep(2,"active");
+  const result = await verifyByYoutube(state.track, fix);
+  const vEl = document.getElementById("verifyStatus");
+  vEl.className = "verify-status show " + (result.match ? "ok" : "fail");
+  vEl.textContent = (result.match ? "✅ " : "❌ ") + result.reason;
+  if (!result.match) {
+    hideLoading();
+    document.getElementById("searchBtn").disabled = false;
+    return;
+  }
+  hide("fixRow");
+  setStep(2,"done");
+  await continueAfterVerify(state.track, fix);
+}
+
+async function continueAfterVerify(track, artist) {
+  try {
+    // Step 3 - artist info
+    setStep(3,"active"); setLoading("查詢藝人資訊...");
+    const aText = await groqCall(
+      "你是音樂資料庫專家。只回傳 JSON，不加任何說明。",
+      `提供藝人「${artist}」的詳細資訊。只回傳 JSON：\n{"name":"","nationality":"","debut_year":"","active":"","member_count":"","genres":[],"bio":"","representative_works":[],"related_artists":[],"labels":[],"awards":""}`,
+      500
+    );
+    const aInfo = parseJsonObj(aText);
+    renderArtistCard(aInfo, artist);
+    setStep(3,"done");
+
+    // Step 4 - concert (Google search via CORS proxy workaround: use search links directly)
+    setStep(4,"active"); setLoading("查詢演唱會資訊...");
+    renderConcertSection(artist);
+    setStep(4,"done");
+
+    // Step 5 - tags
+    setStep(5,"active"); setLoading("分析曲風標籤...");
+    const tText = await groqCall(
+      "你是頂尖音樂評論家。只回傳 JSON 陣列，不加任何說明。",
+      `歌曲：${track} / 藝人：${artist}\n\n極度詳細分析音樂風格，涵蓋：主曲風、子曲風、情緒氛圍、編曲特色、聲音質感、節奏特色、年代風格、語言、使用場景、其他標籤。\n\n只回傳 JSON 陣列，目標 ${MAX_TAGS} 個，不重複：["標籤1","標籤2",...]`,
+      600
+    );
+    const tags = [...new Map(parseJsonArr(tText).map(t => [t.toLowerCase(), t])).values()].slice(0, MAX_TAGS);
+    renderTags(tags);
+    setStep(5,"done");
+
+    // Step 6 - recommend
+    setStep(6,"active"); setLoading("推薦相似歌曲...");
+    const rText = await groqCall(
+      "你是嚴格的專業音樂推薦系統。只回傳 JSON 陣列，不加任何說明。",
+      `曲風標籤（${tags.length}個）：\n${JSON.stringify(tags)}\n\n來源歌曲：${track} by ${artist}\n\n推薦規則：1.不含原曲 2.track+artist唯一 3.同藝人最多${MAX_SAME_ARTIST}次 4.matched_tags必須>=${MIN_MATCH_TAGS}個 5.跨語言跨地區\n\n只回傳JSON陣列：[{"track":"歌名","artist":"藝人","matched_tags":["標籤"],"reason":"推薦原因"}]`,
+      3000, 0.2
+    );
+    const recs = filterRecs(parseJsonArr(rText));
+    renderRecs(recs, track, artist);
+    setStep(6,"done");
+
+    hideLoading();
+    document.getElementById("searchBtn").disabled = false;
+
+  } catch(e) {
+    hideLoading();
+    showError("錯誤：" + e.message);
+    document.getElementById("searchBtn").disabled = false;
+  }
+}
+
+function filterRecs(recs) {
+  const seen = new Set(), artistCount = {}, cleaned = [];
+  for (const r of recs) {
+    const key = `${r.track}|${r.artist}`.toLowerCase();
+    const a   = (r.artist || "").toLowerCase();
+    const m   = r.matched_tags || [];
+    if (!seen.has(key) && m.length >= MIN_MATCH_TAGS && (artistCount[a] || 0) < MAX_SAME_ARTIST) {
+      seen.add(key);
+      artistCount[a] = (artistCount[a] || 0) + 1;
+      cleaned.push(r);
+    }
+  }
+  return cleaned.slice(0, 15);
+}
+
+// ── RENDER ──
+function renderArtistCard(info, fallback) {
+  if (!info.name) info.name = fallback;
+  setText("artistName", info.name || fallback);
+  const meta = document.getElementById("artistMeta");
+  meta.innerHTML = [
+    info.nationality && `<span class="meta-chip">${info.nationality}</span>`,
+    info.debut_year  && `<span class="meta-chip">出道 ${info.debut_year}</span>`,
+    info.active      && `<span class="meta-chip accent">${info.active}</span>`,
+    info.member_count && `<span class="meta-chip">${info.member_count}人</span>`,
+    ...(info.labels || []).map(l => `<span class="meta-chip">${l}</span>`),
+    ...(info.genres || []).map(g => `<span class="meta-chip">${g}</span>`),
+  ].filter(Boolean).join("");
+  setText("artistBio", info.bio || "");
+  const works = (info.representative_works || []).join("、");
+  setHtml("artistWorks", works ? `<span style="color:var(--gray2)">代表作：</span><span>${works}</span>` : "");
+  const related = (info.related_artists || []).join("、");
+  setHtml("artistRelated", related ? `<span style="color:var(--gray2)">相似藝人：</span><span>${related}</span>` : "");
+  setHtml("artistAwards", info.awards ? `<span style="color:var(--gray2)">成就：</span><span>${info.awards}</span>` : "");
+  show("artistCard");
+}
+
+function renderConcertSection(artist) {
+  const encoded  = encodeURIComponent(artist + " 演唱會");
+  const encoded2 = encodeURIComponent(artist);
+  const list = document.getElementById("concertList");
+  list.innerHTML = `<div class="concert-item"><div class="concert-title" style="color:var(--gray2);font-size:0.8rem">演唱會資訊需透過外部網站查詢（網頁版無法直接爬取 Google）</div></div>`;
+  const links = document.getElementById("concertLinks");
+  links.innerHTML = [
+    `<a class="concert-link" href="https://www.google.com/search?q=${encoded}" target="_blank">Google 搜尋</a>`,
+    `<a class="concert-link" href="https://www.songkick.com/search?query=${encoded2}" target="_blank">Songkick</a>`,
+    `<a class="concert-link" href="https://www.setlist.fm/search?query=${encoded2}" target="_blank">Setlist.fm</a>`,
+    `<a class="concert-link" href="https://kktix.com/search?q=${encoded2}" target="_blank">KKTIX</a>`,
+  ].join("");
+  show("concertSection");
+}
+
+function renderTags(tags) {
+  const wrap = document.getElementById("tagsWrap");
+  wrap.innerHTML = tags.map((t, i) =>
+    `<span class="tag-pill ${i < 5 ? 'primary' : ''}">${t}</span>`
+  ).join("");
+  show("tagsSection");
+}
+
+function renderRecs(recs, sourceTrack, sourceArtist) {
+  const list = document.getElementById("recList");
+  if (!recs.length) {
+    list.innerHTML = `<div style="color:var(--gray2);font-size:0.85rem;padding:1rem 0">找不到相符標籤 ≥ ${MIN_MATCH_TAGS} 個的歌曲</div>`;
+  } else {
+    list.innerHTML = recs.map((r, i) => {
+      const ytUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(r.track + " " + r.artist)}`;
+      const tags  = (r.matched_tags || []).slice(0, 8).map(t => `<span class="rec-tag">${t}</span>`).join("");
+      return `
+        <a class="rec-card" href="${ytUrl}" target="_blank">
+          <div class="rec-num">${String(i+1).padStart(2,"0")}</div>
+          <div class="rec-body">
+            <div class="rec-track">${r.track}</div>
+            <div class="rec-artist">${r.artist}</div>
+            <div class="rec-tags">${tags}</div>
+            <div class="rec-reason">${r.reason || ""}</div>
+          </div>
+          <div class="rec-arrow">→</div>
+        </a>`;
+    }).join("");
+  }
+  show("recsSection");
+}
+
+// Enter key
+document.getElementById("urlInput").addEventListener("keydown", e => {
+  if (e.key === "Enter") startSearch();
+});
+document.getElementById("fixInput").addEventListener("keydown", e => {
+  if (e.key === "Enter") reVerify();
+});
+</script>
 </body>
 </html>
