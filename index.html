@@ -68,6 +68,29 @@ header::after { content:''; position:absolute; bottom:0; left:0; right:0; height
 .artist-bio { font-size:.8rem; color:var(--gray2); line-height:1.7; margin-bottom:.6rem; }
 .artist-row { font-size:.77rem; color:var(--gray2); margin-bottom:.25rem; }
 .artist-row span { color:var(--white); }
+.social-links { display:flex; flex-wrap:wrap; gap:0.4rem; margin-top:0.5rem; }
+.social-link {
+  font-size:0.7rem; padding:3px 10px; border-radius:999px;
+  text-decoration:none; font-family:'Space Mono',monospace;
+  transition:opacity .2s;
+}
+.social-link:hover { opacity:0.75; }
+.social-link.ig  { background:#E1306C22; color:#E1306C; border:1px solid #E1306C44; }
+.social-link.tw  { background:#1DA1F222; color:#1DA1F2; border:1px solid #1DA1F244; }
+.social-link.fb  { background:#1877F222; color:#1877F2; border:1px solid #1877F244; }
+.social-link.wiki{ background:rgba(0,255,135,0.1); color:var(--green); border:1px solid rgba(0,255,135,0.2); }
+.social-link.itunes{ background:#FC3C4422; color:#FC3C44; border:1px solid #FC3C4444; }
+.source-tag {
+  font-size:0.62rem; padding:2px 7px; border-radius:4px;
+  background:var(--surface2); color:var(--gray2);
+  font-family:'Space Mono',monospace; margin-top:0.4rem; display:inline-block;
+}
+.artist-thumb {
+  width:100%; border-radius:8px; object-fit:cover;
+  max-height:160px; margin-bottom:0.8rem;
+  display:none;
+}
+.artist-thumb.show { display:block; }
 
 .concert-section { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:1rem; display:none; }
 .concert-section.show { display:block; }
@@ -184,12 +207,12 @@ header::after { content:''; position:absolute; bottom:0; left:0; right:0; height
 
     <div class="artist-card" id="artistCard">
       <div class="panel-label">藝人資訊</div>
+      <img class="artist-thumb" id="artistThumb" src="" alt="" />
       <div class="artist-name-big" id="artistName">—</div>
       <div class="artist-meta" id="artistMeta"></div>
       <div class="artist-bio" id="artistBio"></div>
-      <div class="artist-row" id="artistWorks"></div>
-      <div class="artist-row" id="artistRelated"></div>
-      <div class="artist-row" id="artistAwards"></div>
+      <div id="artistSocial"></div>
+      <div id="artistSource"></div>
     </div>
 
     <div class="concert-section" id="concertSection">
@@ -504,20 +527,44 @@ function filterRecs(recs) {
 function renderArtistCard(info, fallback) {
   if (!info.name) info.name = fallback;
   setText("artistName", info.name || fallback);
+
+  // 縮圖（Wikipedia）
+  const thumb = document.getElementById("artistThumb");
+  if (info.thumbnail) {
+    thumb.src = info.thumbnail;
+    thumb.classList.add("show");
+  } else {
+    thumb.classList.remove("show");
+  }
+
+  // Meta chips
   document.getElementById("artistMeta").innerHTML = [
     info.nationality && `<span class="meta-chip">${info.nationality}</span>`,
     info.debut_year  && `<span class="meta-chip">出道 ${info.debut_year}</span>`,
     info.active      && `<span class="meta-chip accent">${info.active}</span>`,
-    info.member_count && `<span class="meta-chip">${info.member_count}人</span>`,
-    ...(info.labels||[]).map(l=>`<span class="meta-chip">${l}</span>`),
+    info.type        && `<span class="meta-chip">${info.type}</span>`,
     ...(info.genres||[]).map(g=>`<span class="meta-chip">${g}</span>`),
   ].filter(Boolean).join("");
+
+  // Bio
   setText("artistBio", info.bio || "");
-  const works = (info.representative_works||[]).join("、");
-  setHtml("artistWorks", works ? `<span style="color:var(--gray2)">代表作：</span><span>${works}</span>` : "");
-  const related = (info.related_artists||[]).join("、");
-  setHtml("artistRelated", related ? `<span style="color:var(--gray2)">相似藝人：</span><span>${related}</span>` : "");
-  setHtml("artistAwards", info.awards ? `<span style="color:var(--gray2)">成就：</span><span>${info.awards}</span>` : "");
+
+  // 社群連結
+  const social = info.social || {};
+  const links = [
+    social.instagram && `<a class="social-link ig"  href="${social.instagram}" target="_blank">Instagram</a>`,
+    social.twitter   && `<a class="social-link tw"  href="${social.twitter}"   target="_blank">X / Twitter</a>`,
+    social.facebook  && `<a class="social-link fb"  href="${social.facebook}"  target="_blank">Facebook</a>`,
+    info.wiki_url    && `<a class="social-link wiki" href="${info.wiki_url}"   target="_blank">Wikipedia</a>`,
+    info.itunes_url  && `<a class="social-link itunes" href="${info.itunes_url}" target="_blank">iTunes</a>`,
+  ].filter(Boolean);
+  setHtml("artistSocial", links.length ? `<div class="social-links">${links.join("")}</div>` : "");
+
+  // 來源標記
+  const sources = info.sources || [];
+  setHtml("artistSource", sources.length
+    ? `<span class="source-tag">資料來源：${sources.join(" · ")}</span>` : "");
+
   show("artistCard");
 }
 
