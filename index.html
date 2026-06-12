@@ -262,10 +262,10 @@ header::after { content:''; position:absolute; bottom:0; left:0; right:0; height
 </div>
 
 <script>
-const GROQ_API_KEY    = "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";
+const GROQ_API_KEY    = "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";
 const GROQ_URL        = "https://api.groq.com/openai/v1/chat/completions";
 const GROQ_MODEL      = "llama-3.3-70b-versatile";
-const YOUTUBE_API_KEY = "AIzaSyBwE6llhpJbKP0Ww7iwmNj_8dyF_LYXbVA";
+const YOUTUBE_API_KEY = "AIzaSyA75eCBVoSfhphSsLYUEHgntSvTiTSX0j8";
 const YOUTUBE_URL     = "https://www.googleapis.com/youtube/v3";
 const MIN_MATCH_TAGS  = 3;
 const MAX_SAME_ARTIST = 2;
@@ -346,28 +346,68 @@ function extractVideoId(url) {
   return "";
 }
 
+async function getVideoInfoOEmbed(videoId) {
+  // Fallback: YouTube oEmbed — no API key needed, returns title + author
+  try {
+    const r = await fetch(`https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`);
+    if (!r.ok) return null;
+    const d = await r.json();
+    return {
+      videoId,
+      title: d.title || "",
+      channel: d.author_name || "",
+      thumb: `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`
+    };
+  } catch { return null; }
+}
+
 async function getVideoInfo(url) {
   const videoId = extractVideoId(url);
   if (!videoId) throw new Error("無法解析 YouTube 連結");
-  const resp = await fetch(`${YOUTUBE_URL}/videos?part=snippet&id=${videoId}&key=${YOUTUBE_API_KEY}`);
-  const data = await resp.json();
-  if (!data.items?.length) throw new Error("找不到影片");
-  const s = data.items[0].snippet;
-  const thumb = s.thumbnails?.maxres?.url || s.thumbnails?.high?.url || s.thumbnails?.medium?.url || `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
-  return { videoId, title:s.title, channel:s.channelTitle, thumb };
+
+  // Try YouTube Data API first
+  try {
+    const resp = await fetch(`${YOUTUBE_URL}/videos?part=snippet&id=${videoId}&key=${YOUTUBE_API_KEY}`);
+    const data = await resp.json();
+    if (data.error) {
+      // Quota exceeded or key invalid — fall back to oEmbed
+      console.warn("YouTube API error:", data.error.message);
+      const fallback = await getVideoInfoOEmbed(videoId);
+      if (fallback) return fallback;
+      throw new Error("YouTube API 配額已用完，且備用方案失敗");
+    }
+    if (!data.items?.length) {
+      // Try oEmbed before giving up
+      const fallback = await getVideoInfoOEmbed(videoId);
+      if (fallback) return fallback;
+      throw new Error("找不到影片");
+    }
+    const s = data.items[0].snippet;
+    const thumb = s.thumbnails?.maxres?.url || s.thumbnails?.high?.url || s.thumbnails?.medium?.url || `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+    return { videoId, title:s.title, channel:s.channelTitle, thumb };
+  } catch(e) {
+    if (e.message.includes("配額") || e.message.includes("找不到")) throw e;
+    // Network or parse error — try oEmbed
+    const fallback = await getVideoInfoOEmbed(videoId);
+    if (fallback) return fallback;
+    throw new Error("無法取得影片資訊：" + e.message);
+  }
 }
 
 async function getTopVideoOwner(track) {
-  const resp = await fetch(`${YOUTUBE_URL}/search?part=snippet&q=${encodeURIComponent(track)}&type=video&maxResults=5&key=${YOUTUBE_API_KEY}`);
-  const data = await resp.json();
-  const items = data.items || [];
-  if (!items.length) return null;
-  const ids = items.map(i => i.id.videoId).join(",");
-  const statsResp = await fetch(`${YOUTUBE_URL}/videos?part=statistics,snippet&id=${ids}&key=${YOUTUBE_API_KEY}`);
-  const statsData = await statsResp.json();
-  const videos = statsData.items || [];
-  if (!videos.length) return null;
-  return videos.reduce((a, b) => parseInt(a.statistics?.viewCount||0) > parseInt(b.statistics?.viewCount||0) ? a : b);
+  try {
+    const resp = await fetch(`${YOUTUBE_URL}/search?part=snippet&q=${encodeURIComponent(track)}&type=video&maxResults=5&key=${YOUTUBE_API_KEY}`);
+    const data = await resp.json();
+    if (data.error) return null; // quota exceeded — skip verify
+    const items = data.items || [];
+    if (!items.length) return null;
+    const ids = items.map(i => i.id.videoId).join(",");
+    const statsResp = await fetch(`${YOUTUBE_URL}/videos?part=statistics,snippet&id=${ids}&key=${YOUTUBE_API_KEY}`);
+    const statsData = await statsResp.json();
+    const videos = statsData.items || [];
+    if (!videos.length) return null;
+    return videos.reduce((a, b) => parseInt(a.statistics?.viewCount||0) > parseInt(b.statistics?.viewCount||0) ? a : b);
+  } catch { return null; }
 }
 
 function normalize(s) { return s.toLowerCase().replace(/[\s\-_·•【】()（）\[\]《》'"]/g,""); }
