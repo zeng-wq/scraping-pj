@@ -267,7 +267,7 @@ const GROQ_URL        = "https://api.groq.com/openai/v1/chat/completions";
 const GROQ_MODEL      = "llama-3.3-70b-versatile";
 const YOUTUBE_API_KEY = "AIzaSyBwE6llhpJbKP0Ww7iwmNj_8dyF_LYXbVA";
 const YOUTUBE_URL     = "https://www.googleapis.com/youtube/v3";
-const MIN_MATCH_TAGS  = 15;
+const MIN_MATCH_TAGS  = 3;
 const MAX_SAME_ARTIST = 2;
 const MAX_TAGS        = 30;
 const BACKEND_MODE    = false;
@@ -299,19 +299,35 @@ function hideLoading() { hide("loadingBox"); }
 function showError(msg) { const el = document.getElementById("errorBox"); el.textContent = msg; el.classList.add("show"); }
 function clearError() { document.getElementById("errorBox").classList.remove("show"); }
 
-async function groqCall(system, user, maxTokens=300, temperature=0) {
-  const resp = await fetch(GROQ_URL, {
-    method:"POST",
-    headers:{"Authorization":`Bearer ${GROQ_API_KEY}`,"Content-Type":"application/json"},
-    body:JSON.stringify({ model:GROQ_MODEL, max_tokens:maxTokens, temperature,
-      messages:[{role:"system",content:system},{role:"user",content:user}] })
-  });
-  const data = await resp.json();
-  if (!data.choices || !data.choices[0]) {
-    const errMsg = data.error?.message || JSON.stringify(data);
-    throw new Error("Groq API 錯誤：" + errMsg);
+async function groqCall(system, user, maxTokens=300, temperature=0, retries=2) {
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    const resp = await fetch(GROQ_URL, {
+      method:"POST",
+      headers:{"Authorization":`Bearer ${GROQ_API_KEY}`,"Content-Type":"application/json"},
+      body:JSON.stringify({ model:GROQ_MODEL, max_tokens:maxTokens, temperature,
+        messages:[{role:"system",content:system},{role:"user",content:user}] })
+    });
+    const data = await resp.json();
+    if (resp.status === 429) {
+      const waitSec = parseInt((data.error?.message||"").match(/try again in ([\d.]+)/i)?.[1] || "5");
+      const wait = (waitSec + 1) * 1000;
+      if (attempt < retries) {
+        setLoading(`速率限制，${waitSec + 1} 秒後重試...`);
+        await new Promise(r => setTimeout(r, wait));
+        continue;
+      }
+      throw new Error("Groq 請求過於頻繁，請稍後再試（API 速率限制）");
+    }
+    if (!data.choices || !data.choices[0]) {
+      const errMsg = data.error?.message || JSON.stringify(data);
+      if (attempt < retries && resp.status >= 500) {
+        await new Promise(r => setTimeout(r, 2000));
+        continue;
+      }
+      throw new Error("Groq API 錯誤：" + errMsg);
+    }
+    return data.choices[0].message.content.trim();
   }
-  return data.choices[0].message.content.trim();
 }
 
 function parseJsonObj(text) {
